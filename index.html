@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="UTF-8">
+    <title>Wells-fargo-analytics-competition by shippcc</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+  </head>
+  <body>
+    <section class="page-header">
+      <h1 class="project-name">Wells-fargo-analytics-competition</h1>
+      <h2 class="project-tagline"></h2>
+      <a href="https://github.com/shippcc/Wells-Fargo-Analytics-Competition" class="btn">View on GitHub</a>
+      <a href="https://github.com/shippcc/Wells-Fargo-Analytics-Competition/zipball/master" class="btn">Download .zip</a>
+      <a href="https://github.com/shippcc/Wells-Fargo-Analytics-Competition/tarball/master" class="btn">Download .tar.gz</a>
+    </section>
+
+    <section class="main-content">
+      <h3>
+<a id="wells-fargo-data-challenge" class="anchor" href="#wells-fargo-data-challenge" aria-hidden="true"><span class="octicon octicon-link"></span></a>Wells Fargo Data Challenge</h3>
+
+<p>Chris Shipp
+Luca Carvalho
+Marge Marshall</p>
+
+<p>Approach and Methodology</p>
+
+<pre><code>Several initial approaches were tried with the body of consumer content; the most meaningful analysis came from comparative methods.  The specific procedures we used to obtain our results are detailed herein.
+</code></pre>
+
+<p>In the coding process, a random sample (~10,000 posts) of the consumer content was divided into 5 categories: content mentioning BankA(1), BankB(2), BankC(3), BankD(4), or none of the four banks(5).  By using a sentiment analysis patch in the code, content was categorized as positive or negative, and each of the 5 categories was then scored according to their amount of positive vs. negative content.  This gives a rough idea of how consumers perceive each bank on a large scale.</p>
+
+<p>For a deeper analysis, a semi-random sample of 80 content posts was taken and given extra classifications according to topic, cause of post, and audience. This sample was obtained by taking a random sample of 100 content posts from the first four categories, keeping with the comparative method used so far, and then determining which posts out of the 100 were meaningful.  The information gleaned from this analysis, combined with our coded analysis, provided us with a cohesive narrative regarding why people post, what they post about, and who their audience is, and how each bank is regarded comparatively.</p>
+
+<p>The Data</p>
+
+<p>For the graphs we created, each factor corresponds to one of the categories we created for the data.  For this graph and all other graphs, 0 corresponds to content regarding BankA, 1 to BankB, 2 to BankC, 3 to BankD, and 4 to no bank or other banks.</p>
+
+<p>An overall sentiment score, divided by medium.  Overall, more positive content is generated on facebook.</p>
+
+<p>When this data is split to determine scores for both negative and positive sentiment on each medium, we find that content on facebook is not only more positive, but that facebook content is more meaningful overall.</p>
+
+<p>Overall, BankA has the best sentiment score.  However, taking into account how content posts without strong sentiment values may affect the scores, the data is further broken down:</p>
+
+<p>Here we see that even though BankA has the best overall sentiment score, the bank with the most positively valued sentiment scores (among positive sentiment posts) is BankB.</p>
+
+<p>We can account for this difference by looking at the scores for negatively valued posts.  BankA’s negative posts have the lowest average of negative sentiment, while Bank B has a much higher negative score, decreasing its overall score.  It is notable that BankA has such little disparity.  This is discussed further in terms of the deeper content analysis.</p>
+
+<p>Documented Code</p>
+
+<p>df = read.table('dataset.txt',sep="|",header=T)
+df$FullText = as.character(df$FullText)</p>
+
+<h1>
+<a id="grab-just-the-texts-so-you-can-load-them-in-the-corpus" class="anchor" href="#grab-just-the-texts-so-you-can-load-them-in-the-corpus" aria-hidden="true"><span class="octicon octicon-link"></span></a>Grab just the texts, so you can load them in the Corpus</h1>
+
+<p>df.texts = as.data.frame(df[,ncol(df)])
+colnames(df.texts) = 'FullText'</p>
+
+<h1>
+<a id="remove-non-ascii-characters" class="anchor" href="#remove-non-ascii-characters" aria-hidden="true"><span class="octicon octicon-link"></span></a>Remove non-ascii characters</h1>
+
+<p>df.texts.clean = as.data.frame(iconv(df.texts$FullText, "latin1", "ASCII", sub=""))
+colnames(df.texts.clean) = 'FullText'</p>
+
+<p>df$FullText = df.texts.clean$FullText</p>
+
+<p>idx.10000 = sample(1:nrow(df),10000)
+df.10000 = df[idx.10000,]</p>
+
+<h1>
+<a id="load-using-the-tm-library" class="anchor" href="#load-using-the-tm-library" aria-hidden="true"><span class="octicon octicon-link"></span></a>Load using the tm library</h1>
+
+<p>library(tm) 
+docs &lt;- Corpus(DataframeSource(df.texts.clean))   </p>
+
+<h1>
+<a id="strip-extra-whitespace" class="anchor" href="#strip-extra-whitespace" aria-hidden="true"><span class="octicon octicon-link"></span></a>Strip extra whitespace</h1>
+
+<p>docs &lt;- tm_map(docs, stripWhitespace)</p>
+
+<p>bankA.idx = which(sapply(df$FullText,function(x) grepl("BankA",x)))
+bankB.idx = which(sapply(df$FullText,function(x) grepl("BankB",x)))
+bankC.idx = which(sapply(df$FullText,function(x) grepl("BankC",x)))
+bankD.idx = which(sapply(df$FullText,function(x) grepl("BankD",x)))</p>
+
+<p>bankA.docs = docs[bankA.idx]
+bankB.docs = docs[bankB.idx]
+bankC.docs = docs[bankC.idx]
+bankD.docs = docs[bankD.idx]</p>
+
+<p>summary(docs)</p>
+
+<p>docs &lt;- tm_map(docs, removePunctuation) </p>
+
+<p>bankA.dtm &lt;- DocumentTermMatrix(bankA.docs)
+bankB.dtm &lt;- DocumentTermMatrix(bankB.docs)
+bankC.dtm &lt;- DocumentTermMatrix(bankC.docs)
+bankD.dtm &lt;- DocumentTermMatrix(bankD.docs)</p>
+
+<h1>
+<a id="since-we-cant-find-a-great-package-in-r-im-going-to-use-an" class="anchor" href="#since-we-cant-find-a-great-package-in-r-im-going-to-use-an" aria-hidden="true"><span class="octicon octicon-link"></span></a>Since we can't find a great package in R, I'm going to use an</h1>
+
+<h1>
+<a id="example-i-found-online-to-build-our-own" class="anchor" href="#example-i-found-online-to-build-our-own" aria-hidden="true"><span class="octicon octicon-link"></span></a>example I found online to build our own</h1>
+
+<h1>
+<a id="based-on-httpwwwihubcokeblogs23216" class="anchor" href="#based-on-httpwwwihubcokeblogs23216" aria-hidden="true"><span class="octicon octicon-link"></span></a>Based on: <a href="http://www.ihub.co.ke/blogs/23216">http://www.ihub.co.ke/blogs/23216</a>
+</h1>
+
+<h1>
+<a id="only-need-to-do-once" class="anchor" href="#only-need-to-do-once" aria-hidden="true"><span class="octicon octicon-link"></span></a>Only need to do once</h1>
+
+<h1>
+<a id="download-and-upload-httpwwwcsuiceduliubfbsopinion-lexicon-englishrar" class="anchor" href="#download-and-upload-httpwwwcsuiceduliubfbsopinion-lexicon-englishrar" aria-hidden="true"><span class="octicon octicon-link"></span></a>Download and upload: <a href="http://www.cs.uic.edu/%7Eliub/FBS/opinion-lexicon-English.rar">http://www.cs.uic.edu/~liub/FBS/opinion-lexicon-English.rar</a>
+</h1>
+
+<h1>
+<a id="systemunrar-e-opinion-lexicon-englishrar" class="anchor" href="#systemunrar-e-opinion-lexicon-englishrar" aria-hidden="true"><span class="octicon octicon-link"></span></a>system('unrar e opinion-lexicon-English.rar')</h1>
+
+<p>pos &lt;- scan('./AnalyticsCompetition/positive-words.txt',what='character',comment.char=';')
+neg &lt;- scan('./AnalyticsCompetition/negative-words.txt',what='character',comment.char=';')</p>
+
+<p>score.sentiment = function(sentences, pos.words, neg.words, .progress='none')
+{
+  require(plyr)
+  require(stringr)</p>
+
+<p># we got a vector of sentences. plyr will handle a list
+  # or a vector as an "l" for us
+  # we want a simple array ("a") of scores back, so we use 
+  # "l" + "a" + "ply" = "laply":
+  scores = laply(sentences, function(sentence, pos.words, neg.words) {</p>
+
+<pre><code># clean up sentences with R's regex-driven global substitute, gsub():
+sentence = gsub('[[:punct:]]', '', sentence)
+sentence = gsub('[[:cntrl:]]', '', sentence)
+sentence = gsub('\\d+', '', sentence)
+# and convert to lower case:
+sentence = tolower(sentence)
+
+# split into words. str_split is in the stringr package
+word.list = str_split(sentence, '\\s+')
+# sometimes a list() is one level of hierarchy too much
+words = unlist(word.list)
+
+# compare our words to the dictionaries of positive &amp; negative terms
+pos.matches = match(words, pos.words)
+neg.matches = match(words, neg.words)
+
+# match() returns the position of the matched term or NA
+# we just want a TRUE/FALSE:
+pos.matches = !is.na(pos.matches)
+neg.matches = !is.na(neg.matches)
+
+# and conveniently enough, TRUE/FALSE will be treated as 1/0 by sum():
+score = sum(pos.matches) - sum(neg.matches)
+
+return(score)
+</code></pre>
+
+<p>}, pos.words, neg.words, .progress=.progress )</p>
+
+<p>scores.df = data.frame(score=scores, text=sentences)
+  return(scores.df)
+}</p>
+
+<p>df.10000$FullText = as.character(df.10000$FullText)</p>
+
+<p>scores = score.sentiment(df.10000$FullText, pos, neg, .progress='text')
+scores.500 = scores[sample(1:nrow(scores), 500), ]</p>
+
+<p>scores$bankA = as.numeric(grepl("BankA",scores$text))
+scores$bankB = as.numeric(grepl("BankB",scores$text))
+scores$bankC = as.numeric(grepl("BankC",scores$text))
+scores$bankD = as.numeric(grepl("BankD",scores$text))
+scores$bank = scores$bankA
+scores$bank[scores$bankB==1]=2
+scores$bank[scores$bankC==1]=3
+scores$bank[scores$bankD==1]=4</p>
+
+<p>scores.None = scores[which(scores$bank == 0), c(1,2,8,9,10)]
+scores.bankA = scores[which(scores$bank == 1), c(1,2,8,9,10)]
+scores.bankB = scores[which(scores$bank == 2), c(1,2,8,9,10)]
+scores.bankC = scores[which(scores$bank == 3), c(1,2,8,9,10)]
+scores.bankD = scores[which(scores$bank == 4), c(1,2,8,9,10)]</p>
+
+<p>scores$very.pos = as.numeric(scores$score &gt;= 2)
+scores$very.neg = as.numeric(scores$score &lt;= -2)</p>
+
+<h1>
+<a id="how-many-very-positives-and-very-negatives" class="anchor" href="#how-many-very-positives-and-very-negatives" aria-hidden="true"><span class="octicon octicon-link"></span></a>how many very positives and very negatives</h1>
+
+<p>numpos = sum(scores$very.pos)
+numneg = sum(scores$very.neg)</p>
+
+<h1>
+<a id="global-score" class="anchor" href="#global-score" aria-hidden="true"><span class="octicon octicon-link"></span></a>global score</h1>
+
+<p>global_score = round( 100 * numpos / (numpos + numneg) )</p>
+
+<p>scores$mediatype = df.10000$MediaType</p>
+
+<h1>
+<a id="creation-of-the-two-differwnt-data-frames" class="anchor" href="#creation-of-the-two-differwnt-data-frames" aria-hidden="true"><span class="octicon octicon-link"></span></a>Creation of the two differwnt data frames</h1>
+
+<h1>
+<a id="marge-data-frame" class="anchor" href="#marge-data-frame" aria-hidden="true"><span class="octicon octicon-link"></span></a>Marge data Frame</h1>
+
+<p>bankA.Marge = scores.bankA[sample(1:nrow(scores.bankA), 50), ]
+bankA.justtweetes.M = bankA.Marge[, c(2,5)]
+write.csv(bankA.justtweetes.M, "Tweets_bankA_Marge.csv")</p>
+
+<p>bankB.Marge = scores.bankB[sample(1:nrow(scores.bankB), 50), ]
+bankB.justtweetes.M = bankB.Marge[, c(2,5)]
+write.csv(bankB.justtweetes.M, "Tweets_bankB_Marge.csv")</p>
+
+<p>bankC.Marge = scores.bankC[sample(1:nrow(scores.bankC), 50), ]
+bankC.justtweetes.M = bankC.Marge[, c(2,5)]
+write.csv(bankC.justtweetes.M, "Tweets_bankC_Marge.csv")</p>
+
+<p>bankD.Marge = scores.bankD[sample(1:nrow(scores.bankD), 50), ]
+bankD.justtweetes.M = bankD.Marge[, c(2,5)]
+write.csv(bankD.justtweetes.M, "Tweets_bankD_Marge.csv")</p>
+
+<h1>
+<a id="chris-data-frame" class="anchor" href="#chris-data-frame" aria-hidden="true"><span class="octicon octicon-link"></span></a>Chris data Frame</h1>
+
+<p>bankA.Chris = scores.bankA[sample(1:nrow(scores.bankA), 50), ]
+bankA.justtweetes.C = bankA.Chris[, c(2,5)]
+write.csv(bankA.justtweetes.C, "Tweets_bankA_Chris.csv")</p>
+
+<p>bankB.Chris = scores.bankB[sample(1:nrow(scores.bankB), 50), ]
+bankB.justtweetes.C = bankB.Chris[, c(2,5)]
+write.csv(bankB.justtweetes.C, "Tweets_bankB_Chris.csv")</p>
+
+<p>bankC.Chris = scores.bankC[sample(1:nrow(scores.bankC), 50), ]
+bankC.justtweetes.C = bankC.Chris[, c(2,5)]
+write.csv(bankC.justtweetes.C, "Tweets_bankC_Chris.csv")</p>
+
+<p>bankD.Chris = scores.bankD[sample(1:nrow(scores.bankD), 50), ]
+bankD.justtweetes.C = bankD.Chris[, c(2,5)]
+write.csv(bankD.justtweetes.C, "Tweets_bankD_Chris.csv")</p>
+
+<h1>
+<a id="colors" class="anchor" href="#colors" aria-hidden="true"><span class="octicon octicon-link"></span></a>colors</h1>
+
+<p>cols = c("#7CAE00", "#00BFC4")
+cols2 = c("#FF8C00", "#8B0000", "#FF00FF", "#FFD700", "#7CAE00")
+names(cols) = c("twitter", "facebook")
+names(cols2) = c("0", "1", "2", "3", "4")</p>
+
+<h1>
+<a id="boxplot" class="anchor" href="#boxplot" aria-hidden="true"><span class="octicon octicon-link"></span></a>boxplot</h1>
+
+<p>library(ggplot2)
+ggplot(scores, aes(x=mediatype, y=score, group=mediatype)) +
+  geom_boxplot(aes(fill=mediatype)) +
+  scale_fill_manual(values=cols) +
+  geom_jitter(aes(color = factor(bank)),position=position_jitter(width=0.2), alpha=0.3) +
+  labs(title = "Media Type's Sentiment Scores") + 
+  xlab('Media Type') + ylab('Sentiment Score')</p>
+
+<p>ggplot(scores.500, aes(x=mediatype, y=score, group=mediatype)) +
+  geom_boxplot(aes(fill=mediatype)) +
+  scale_fill_manual(values=cols) +
+  geom_jitter(aes(color = factor(bank)),position=position_jitter(width=0.2), alpha=0.3) +
+  labs(title = "Media Type's Sentiment Scores") + 
+  xlab('Media Type') + ylab('Sentiment Score')</p>
+
+<h1>
+<a id="barplot-of-average-score" class="anchor" href="#barplot-of-average-score" aria-hidden="true"><span class="octicon octicon-link"></span></a>barplot of average score</h1>
+
+<p>meanscore = tapply(scores$score, scores$mediatype, mean)
+df.plot = data.frame(mediatype=names(meanscore), meanscore=meanscore)
+df.plot$mediatypes &lt;- reorder(df.plot$mediatype, df.plot$meanscore)</p>
+
+<p>ggplot(df.plot, aes(x = factor(mediatypes), y = meanscore, fill=mediatypes)) +
+  geom_bar(stat="identity") +
+  scale_fill_manual(values=cols[order(df.plot$meanscore)]) +
+  labs(title = "Average Sentiment Score") + 
+  xlab('Media Type') + ylab('Average Score')</p>
+
+<h1>
+<a id="avarage-score-for-each-bank" class="anchor" href="#avarage-score-for-each-bank" aria-hidden="true"><span class="octicon octicon-link"></span></a>Avarage score for each bank</h1>
+
+<p>meanscore.bank = tapply(scores$score, scores$bank, mean)
+df.plot.bank = data.frame(bank=names(meanscore.bank), meanscore.bank=meanscore.bank)
+df.plot.bank$bank &lt;- reorder(df.plot.bank$bank, df.plot.bank$meanscore)</p>
+
+<p>ggplot(df.plot.bank, aes(x = factor(bank), y = meanscore.bank, fill=bank)) +
+  geom_bar(stat="identity") +
+  scale_fill_manual(values=cols2[order(df.plot.bank$meanscore)]) +
+  labs(title = "Average Sentiment Score For Each Bank") + 
+  xlab('Banks') + ylab('Average Score')</p>
+
+<h1>
+<a id="barplot-of-average-very-positive" class="anchor" href="#barplot-of-average-very-positive" aria-hidden="true"><span class="octicon octicon-link"></span></a>barplot of average very positive</h1>
+
+<p>mediatype_pos = ddply(scores, .(mediatype), summarise, mean_pos=mean(very.pos))
+mediatype_pos$mediatypes &lt;- reorder(mediatype_pos$mediatype, mediatype_pos$mean_pos)</p>
+
+<p>ggplot(mediatype_pos, aes(x = factor(mediatypes), y = mediatype_pos$mean_pos, fill=mediatypes)) +
+  geom_bar(stat="identity") +
+  scale_fill_manual(values=cols[order(df.plot$meanscore)]) +
+  labs(title = "Average Very Positive Sentiment Score") + 
+  xlab('Media Type') + ylab('Average Score')</p>
+
+<h1>
+<a id="avarage-very-positive-score-for-each-bank" class="anchor" href="#avarage-very-positive-score-for-each-bank" aria-hidden="true"><span class="octicon octicon-link"></span></a>Avarage very positive score for each bank</h1>
+
+<h1>
+<a id="todo" class="anchor" href="#todo" aria-hidden="true"><span class="octicon octicon-link"></span></a>TODO</h1>
+
+<p>banks_pos = ddply(scores, .(bank), summarise, mean_pos=mean(very.pos))
+banks_pos$bank &lt;- reorder(banks_pos$bank, banks_pos$mean_pos)</p>
+
+<p>ggplot(banks_pos, aes(x = factor(bank), y = banks_pos$mean_pos, fill=bank)) +
+  geom_bar(stat="identity") +
+  scale_fill_manual(values=cols2[order(df.plot.bank$meanscore.bank)]) +
+  labs(title = "Average Very Positive Sentiment Score For Each Bank") + 
+  xlab('Banks') + ylab('Average Score')</p>
+
+<h1>
+<a id="negative-words-avarage" class="anchor" href="#negative-words-avarage" aria-hidden="true"><span class="octicon octicon-link"></span></a>Negative Words avarage</h1>
+
+<p>mediatype_neg = ddply(scores, .(mediatype), summarise, mean_pos=mean(very.neg))
+mediatype_neg$mediatypes &lt;- reorder(mediatype_pos$mediatype, mediatype_pos$mean_pos)</p>
+
+<p>ggplot(mediatype_pos, aes(x = factor(mediatypes), y = mediatype_neg$mean_pos, fill=mediatypes)) +
+  geom_bar(stat="identity") +
+  scale_fill_manual(values=cols[order(df.plot$meanscore)]) +
+  labs(title = "Average Very Negative Sentiment Score") + 
+  xlab('Media Type') + ylab('Average Score')</p>
+
+<h1>
+<a id="negative-words-avarage-for-each-bank" class="anchor" href="#negative-words-avarage-for-each-bank" aria-hidden="true"><span class="octicon octicon-link"></span></a>Negative words avarage for each bank</h1>
+
+<p>banks_neg = ddply(scores, .(bank), summarise, mean_pos=mean(very.neg))
+banks_neg$bank &lt;- reorder(banks_neg$bank, banks_neg$mean_pos)</p>
+
+<p>ggplot(banks_neg, aes(x = factor(bank), y = banks_neg$mean_pos, fill=bank)) +
+  geom_bar(stat="identity") +
+  scale_fill_manual(values=cols2[order(df.plot.bank$meanscore.bank)]) +
+  labs(title = "Average Very Negative Sentiment Score For Each Bank") + 
+  xlab('Banks') + ylab('Average Score')</p>
+
+<p>createWordCloud = function(dataset){</p>
+
+<p>corpus &lt;- Corpus(DataframeSource(dataset))</p>
+
+<p>corpus &lt;- tm_map(corpus, removeWords, c("twit_hndl", "ADDRESS","name", "twit","twithndlbankc", "hndl", "twit_hndl_banka","twit_hndl_bankc", "banka"))
+  corpus &lt;- tm_map(corpus, stripWhitespace)
+  corpus &lt;- tm_map(corpus, removePunctuation)
+  corpus &lt;- tm_map(corpus, removeNumbers)
+  corpus &lt;- tm_map(corpus, removeWords, stopwords("english"))</p>
+
+<p>dtm &lt;- DocumentTermMatrix(corpus)
+  tdm &lt;- TermDocumentMatrix(corpus)</p>
+
+<p>freq &lt;- colSums(as.matrix(dtm))<br>
+  length(freq)<br>
+  ord &lt;- order(freq)<br>
+  m &lt;- as.matrix(dtm)<br>
+  dim(m)   </p>
+
+<p>freq &lt;- colSums(as.matrix(dtm))<br>
+  freq<br>
+  dtms &lt;- removeSparseTerms(dtm, 0.25) # Prepare the data (max 15% empty space)<br>
+  freq &lt;- colSums(as.matrix(dtm)) # Find word frequencies<br>
+  dark2 &lt;- brewer.pal(6, "Dark2")<br>
+  wordcloud(names(freq), freq, max.words=150, rot.per=0.1, colors=dark2)<br>
+}</p>
+
+<p>library(tm)
+library(wordcloud)
+scores.bankC$text = as.character(scores.bankC$text)
+scores.bankD$text = as.character(scores.bankD$text)
+scores.bankB$text = as.character(scores.bankB$text)
+scores.bankA$text = as.character(scores.bankA$text)</p>
+
+<p>createWordCloud(scores.bankC)
+createWordCloud(scores.bankA)
+createWordCloud(scores.bankB)
+createWordCloud(scores.bankD)</p>
+
+<p>List of Topics and Substance</p>
+
+<p>The topics and substances we found are listed below, from highest to lowest in frequency</p>
+
+<p>Topics
+Substances
+customer service
+bad experience
+technology
+news
+PR
+volunteer/gift appreciation
+security
+disapproval
+card services
+lack of services
+advertising
+appreciation for services
+unauthorized changes
+customer appreciation
+policies
+mistrust
+new customer
+request for help
+employment
+politics
+student services
+account login
+personal account
+customer attrition
+bank fees
+employee statement</p>
+
+<p>identification issue</p>
+
+<p>comparing banks</p>
+
+<p>Insights</p>
+
+<p>Top Words for Bank A</p>
+
+<p>Overall, almost all of the content posts regarding customer service that were analyzed were caused by a bad experience. Other topics, such as PR, had greater contrast within their substance -- the majority of posts here were shared news articles, but also included some appreciation posts, mostly for Bank A and Bank B.  This agrees with our sentiment analysis that Bank A and Bank B are the banks with the highest sentiment score, and the greatest number of positive posts.  Not all of our data fits with that analysis, however;  out of the 28 posts caused by a bad experience, 10 of them were about Bank A.  Some of this is due to the nature of sentiment analysis itself, which cannot read the deeper meaning behind a sarcastic comment.  </p>
+
+<p>“i would like to send out a special thank you to the teller at the BankA for telling everyone at the top of her lungs how much cash i just deposited into my account and the last four numbers of my account! great job and thanks for the discretion!”</p>
+
+<p>Top Words for Bank B</p>
+
+<p>“its been a weekend of home dedications starting with friday afternoons celebration at the Name family home with some of the amazing staff from Name island Name who helped build for salondia and her daughter! thank you tradewinds and ceo Name Name for sponsoring this home and BankB for donating the property!”</p>
+
+<p>“has anyone else had a bad experience with BankB? their customer service(or lack there of)is terrible. maybe it is just the one teller at the lake Name branch that argued with me that i did not have an account there. i told her 3(maybe 4)times that i did. she responded each time no you dont. thanks to the lady that showed her that i did in fact have two account there. evidently the problem was that the teller arguing with me didnt realize the account was was in my name. she had my drivers license. Name!”</p>
+
+<p>Bank C and Bank D seemed to have more specific negative content.  Bank A and Bank B’s negative posts were all generally about customer services, with a few complaints about charges and fees. While Bank C also had a high number of negative customer service posts, its PR posts give us a much stronger image of how people perceive them.  Bank A and Bank B both have a mix of good and bad press, with many people expressing appreciation for the banks, and each bank totalling only 1 negative PR post each out of the sample. Out of 6 posts regarding PR for Bank C, 4 of the posts were negative.  The other 2 posts were neutral.</p>
+
+<p>Top Words for Bank C</p>
+
+<p>“yes government still rolling but BankC just got their wish able to play around with risky stocks and we will bail them out again whats up with him? so disappointing”</p>
+
+<p>Bank D, whose PR posts are mostly neutral, is the only bank with any posts about security, and these posts make up the majority of Bank D’s content posts.  Of its PR posts, a considerable number of the posts are for an event, which significantly skewed the data with repeated phrases, as seen in its graph of top words.</p>
+
+<p>In the deeper analysis these event related posts carried little significant meaning, despite their prevalence;  When these posts are not included, the security posts become the most notable content produced regarding Bank D.  It is clear from these posts that something has happened to cause concern for Bank D’s customers.</p>
+
+<p>“possible 83 million account are hacked at BankD Name according to another source... the figure is higher. its reported that the number is 83 million. INTERNET”</p>
+
+<p>Top Words for Bank D</p>
+
+      <footer class="site-footer">
+        <span class="site-footer-owner"><a href="https://github.com/shippcc/Wells-Fargo-Analytics-Competition">Wells-fargo-analytics-competition</a> is maintained by <a href="https://github.com/shippcc">shippcc</a>.</span>
+
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
+      </footer>
+
+    </section>
+
+  
+  </body>
+</html>
